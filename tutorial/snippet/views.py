@@ -119,6 +119,8 @@ def snippet_detail(request, pk):
 from rest_framework import mixins
 from rest_framework import generics
 
+from .permissions import IsOwnerOrReadOnly
+from rest_framework import permissions
 
 class SnippetDetailByMixins(mixins.RetrieveModelMixin,
                     mixins.UpdateModelMixin,
@@ -126,6 +128,8 @@ class SnippetDetailByMixins(mixins.RetrieveModelMixin,
                     generics.GenericAPIView):
     queryset = Snippet.objects.all()
     serializer_class = MySnippetSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly,)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -141,7 +145,24 @@ class SnippetListByView(generics.ListCreateAPIView):
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
 
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 class SnippetDetailByView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
+
+
+from django.contrib.auth.models import User
+from .serializers import UserSerializer
+
+
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
+class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
